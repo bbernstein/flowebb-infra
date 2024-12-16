@@ -15,6 +15,13 @@ terraform {
   }
 }
 
+output "frontend_deployment_details" {
+  value = {
+    frontend_bucket_name       = module.storage.frontend_bucket_domain
+    cloudfront_distribution_id = module.networking.cloudfront_distribution_id
+  }
+}
+
 provider "aws" {
   region = var.aws_region
 }
