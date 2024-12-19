@@ -1,3 +1,4 @@
+# First create API Gateway
 resource "aws_apigatewayv2_api" "main" {
   name          = "${var.project_name}-api-${var.environment}"
   protocol_type = "HTTP"
@@ -9,6 +10,102 @@ resource "aws_apigatewayv2_api" "main" {
   }
 }
 
+# Create CloudWatch log groups before Lambda functions
+resource "aws_cloudwatch_log_group" "lambda_tides" {
+  name              = "/aws/lambda/${var.project_name}-tides-${var.environment}"
+  retention_in_days = var.log_retention_days
+}
+
+resource "aws_cloudwatch_log_group" "lambda_stations" {
+  name              = "/aws/lambda/${var.project_name}-stations-${var.environment}"
+  retention_in_days = var.log_retention_days
+}
+
+resource "aws_cloudwatch_log_group" "api_logs" {
+  name              = "/aws/apigateway/${var.project_name}-${var.environment}"
+  retention_in_days = var.log_retention_days
+}
+
+# Create Lambda functions
+resource "aws_lambda_function" "tides" {
+  filename         = var.lambda_jar_path
+  source_code_hash = var.lambda_jar_hash
+  function_name    = "${var.project_name}-tides-${var.environment}"
+  role            = var.lambda_role_arn
+  handler         = "com.flowebb.lambda.TidesLambda::handleRequest"
+  runtime         = "java11"
+  memory_size     = var.lambda_memory_size
+  timeout         = var.lambda_timeout
+
+  environment {
+    variables = {
+      STATION_LIST_BUCKET = var.station_list_bucket_id
+      ALLOWED_ORIGINS    = "https://${var.frontend_domain}"
+      LOG_LEVEL         = "DEBUG"
+    }
+  }
+
+  depends_on = [aws_cloudwatch_log_group.lambda_tides]
+}
+
+resource "aws_lambda_function" "stations" {
+  filename         = var.lambda_jar_path
+  source_code_hash = var.lambda_jar_hash
+  function_name    = "${var.project_name}-stations-${var.environment}"
+  role            = var.lambda_role_arn
+  handler         = "com.flowebb.lambda.StationsLambda::handleRequest"
+  runtime         = "java11"
+  memory_size     = var.lambda_memory_size
+  timeout         = var.lambda_timeout
+
+  environment {
+    variables = {
+      STATION_LIST_BUCKET = var.station_list_bucket_id
+      ALLOWED_ORIGINS    = "https://${var.frontend_domain}"
+      LOG_LEVEL         = "DEBUG"
+    }
+  }
+
+  depends_on = [aws_cloudwatch_log_group.lambda_stations]
+}
+
+# Create API Gateway integrations
+resource "aws_apigatewayv2_integration" "tides" {
+  api_id             = aws_apigatewayv2_api.main.id
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
+  integration_uri    = aws_lambda_function.tides.invoke_arn
+
+  depends_on = [aws_lambda_function.tides]
+}
+
+resource "aws_apigatewayv2_integration" "stations" {
+  api_id             = aws_apigatewayv2_api.main.id
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
+  integration_uri    = aws_lambda_function.stations.invoke_arn
+
+  depends_on = [aws_lambda_function.stations]
+}
+
+# Create routes
+resource "aws_apigatewayv2_route" "tides" {
+  api_id    = aws_apigatewayv2_api.main.id
+  route_key = "GET /api/tides"
+  target    = "integrations/${aws_apigatewayv2_integration.tides.id}"
+
+  depends_on = [aws_apigatewayv2_integration.tides]
+}
+
+resource "aws_apigatewayv2_route" "stations" {
+  api_id    = aws_apigatewayv2_api.main.id
+  route_key = "GET /api/stations"
+  target    = "integrations/${aws_apigatewayv2_integration.stations.id}"
+
+  depends_on = [aws_apigatewayv2_integration.stations]
+}
+
+# Create API Gateway stage
 resource "aws_apigatewayv2_stage" "main" {
   api_id      = aws_apigatewayv2_api.main.id
   name        = "$default"
@@ -25,92 +122,30 @@ resource "aws_apigatewayv2_stage" "main" {
       status        = "$context.status"
       protocol      = "$context.protocol"
       responseLength = "$context.responseLength"
-      integration = {
-        error = "$context.integration.error"
-        integrationStatus = "$context.integration.status"
-        latency = "$context.integration.latency"
-        requestId = "$context.integration.requestId"
-      }
     })
   }
+
+  depends_on = [aws_cloudwatch_log_group.api_logs]
 }
 
-# Create CloudWatch Log Group for API Gateway
-resource "aws_cloudwatch_log_group" "api_logs" {
-  name              = "/aws/apigateway/${var.project_name}-${var.environment}"
-  retention_in_days = 30
+# Create Lambda permissions
+resource "aws_lambda_permission" "api_gw_tides" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.tides.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
 }
 
-# data "archive_file" "lambda_zip" {
-#   type        = "zip"
-#   source_file = "../../../../backend/build/libs/tides-be.jar"
-#   output_path = "lambda.zip"
-# }
-
-resource "null_resource" "build_lambda" {
-  triggers = {
-    always_run = timestamp()
-  }
-
-  provisioner "local-exec" {
-    command = "cd ${path.root}/../../../../backend && ./gradlew build"
-  }
+resource "aws_lambda_permission" "api_gw_stations" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.stations.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
 }
 
-resource "aws_lambda_function" "tides" {
-  filename         = "${path.root}/../../../../backend/build/libs/tides-be.jar"
-  source_code_hash = filebase64sha256("${path.root}/../../../../backend/build/libs/tides-be.jar")
-  function_name    = "${var.project_name}-tides-${var.environment}"
-  role            = var.lambda_role_arn
-  handler         = "com.flowebb.lambda.TidesLambda::handleRequest"
-  runtime         = "java11"
-  memory_size     = 512
-  timeout         = 120
-
-  depends_on = [null_resource.build_lambda]
-
-  environment {
-    variables = {
-      STATION_LIST_BUCKET = var.station_list_bucket_id
-      ALLOWED_ORIGINS    = "https://${var.frontend_domain}"
-      LOG_LEVEL          = "DEBUG"
-    }
-  }
-
-}
-
-resource "aws_lambda_function" "stations" {
-  filename         = "${path.root}/../../../../backend/build/libs/tides-be.jar"
-  source_code_hash = filebase64sha256("${path.root}/../../../../backend/build/libs/tides-be.jar")
-  function_name    = "${var.project_name}-stations-${var.environment}"
-  role            = var.lambda_role_arn
-  handler         = "com.flowebb.lambda.StationsLambda::handleRequest"
-  runtime         = "java11"
-  memory_size     = 512
-  timeout         = 120
-
-  depends_on = [null_resource.build_lambda]
-
-  environment {
-    variables = {
-      STATION_LIST_BUCKET = var.station_list_bucket_id
-      ALLOWED_ORIGINS    = "https://${var.frontend_domain}"
-      LOG_LEVEL          = "DEBUG"
-    }
-  }
-}
-
-resource "aws_cloudwatch_log_group" "lambda_tides" {
-  name              = "/aws/lambda/${aws_lambda_function.tides.function_name}"
-  retention_in_days = var.log_retention_days
-}
-
-resource "aws_cloudwatch_log_group" "lambda_stations" {
-  name              = "/aws/lambda/${aws_lambda_function.stations.function_name}"
-  retention_in_days = var.log_retention_days
-}
-
-# Add CloudWatch Metric Alarms
+# Create CloudWatch alarms
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   alarm_name          = "${var.project_name}-${var.environment}-lambda-errors"
   comparison_operator = "GreaterThanThreshold"
@@ -121,57 +156,8 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   statistic          = "Sum"
   threshold          = "0"
   alarm_description  = "Lambda function error rate"
-  alarm_actions      = [] # Add SNS topic ARN here if you want notifications
 
   dimensions = {
     FunctionName = aws_lambda_function.tides.function_name
   }
-}
-
-resource "aws_apigatewayv2_integration" "tides" {
-  api_id             = aws_apigatewayv2_api.main.id
-  integration_type   = "AWS_PROXY"
-  integration_method = "POST"
-  integration_uri    = aws_lambda_function.tides.invoke_arn
-}
-
-resource "aws_apigatewayv2_integration" "stations" {
-  api_id             = aws_apigatewayv2_api.main.id
-  integration_type   = "AWS_PROXY"
-  integration_method = "POST"
-  integration_uri    = aws_lambda_function.stations.invoke_arn
-}
-
-resource "aws_apigatewayv2_route" "tides" {
-  api_id    = aws_apigatewayv2_api.main.id
-  route_key = "GET /api/tides"
-  target    = "integrations/${aws_apigatewayv2_integration.tides.id}"
-}
-
-resource "aws_apigatewayv2_route" "stations" {
-  api_id    = aws_apigatewayv2_api.main.id
-  route_key = "GET /api/stations"
-  target    = "integrations/${aws_apigatewayv2_integration.stations.id}"
-}
-
-# Add permissions for API Gateway to invoke the Tides Lambda
-resource "aws_lambda_permission" "api_gw_tides" {
-  statement_id  = "AllowAPIGatewayInvoke"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.tides.function_name
-  principal     = "apigateway.amazonaws.com"
-
-  # The /* part allows invocation from any stage, method and resource path
-  # within API Gateway.
-  source_arn = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
-}
-
-# Add permissions for API Gateway to invoke the Stations Lambda
-resource "aws_lambda_permission" "api_gw_stations" {
-  statement_id  = "AllowAPIGatewayInvoke"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.stations.function_name
-  principal     = "apigateway.amazonaws.com"
-
-  source_arn = "${aws_apigatewayv2_api.main.execution_arn}/*/*"
 }

@@ -50,3 +50,13 @@ variable "log_retention_days" {
   type        = number
   default     = 30
 }
+
+variable "lambda_jar_path" {
+  description = "Path to the Lambda JAR file"
+  type        = string
+}
+
+variable "lambda_jar_hash" {
+  description = "Hash of the Lambda JAR file"
+  type        = string
+}

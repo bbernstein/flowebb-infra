@@ -1,73 +1,4 @@
-terraform {
-  required_providers {
-    aws = {
-      configuration_aliases = [ aws.us-east-1 ]
-    }
-  }
-}
-
-data "aws_route53_zone" "main" {
-  name = var.domain_name
-  private_zone = false
-}
-
-resource "aws_acm_certificate" "main" {
-  provider          = aws.us-east-1
-  domain_name       = var.domain_name
-  validation_method = "DNS"
-
-  subject_alternative_names = [
-    "*.${var.domain_name}",
-    var.frontend_domain,
-    var.api_domain
-  ]
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-certificate"
-    Environment = var.environment
-    Project     = var.project_name
-  }
-
-  lifecycle {
-    create_before_destroy = true
-    prevent_destroy      = true
-    ignore_changes      = [
-      validation_option,
-      validation_method
-    ]
-  }
-}
-
-locals {
-  # Create a map of unique records based on the record name
-  distinct_domain_validations = {
-    for dvo in aws_acm_certificate.main.domain_validation_options : dvo.domain_name => {
-      name   = dvo.resource_record_name
-      record = dvo.resource_record_value
-      type   = dvo.resource_record_type
-    }
-    if !contains(
-      [for v in tolist(aws_acm_certificate.main.domain_validation_options) : v.resource_record_name],
-      dvo.resource_record_name
-    )
-  }
-}
-
-resource "aws_route53_record" "cert_validation" {
-  for_each = local.distinct_domain_validations
-
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = each.value.name
-  type    = each.value.type
-  records = [each.value.record]
-  ttl     = 60
-}
-
-resource "aws_acm_certificate_validation" "main" {
-  provider                = aws.us-east-1
-  certificate_arn         = aws_acm_certificate.main.arn
-  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
-}
+# infrastructure/terraform/modules/edge_networking/main.tf
 
 resource "aws_cloudfront_origin_access_identity" "frontend" {
   comment = "access-identity-${var.frontend_domain}"
@@ -140,7 +71,7 @@ resource "aws_cloudfront_distribution" "main" {
   }
 
   viewer_certificate {
-    acm_certificate_arn = aws_acm_certificate.main.arn
+    acm_certificate_arn = var.certificate_arn
     ssl_support_method  = "sni-only"
   }
 
@@ -149,15 +80,10 @@ resource "aws_cloudfront_distribution" "main" {
       restriction_type = "none"
     }
   }
-
-  depends_on = [
-    aws_acm_certificate_validation.main,
-    aws_cloudfront_origin_access_identity.frontend
-  ]
 }
 
 resource "aws_route53_record" "frontend" {
-  zone_id = data.aws_route53_zone.main.zone_id
+  zone_id = var.route53_zone_id
   name    = var.frontend_domain
   type    = "A"
 
@@ -166,18 +92,10 @@ resource "aws_route53_record" "frontend" {
     zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
     evaluate_target_health = false
   }
-
-  lifecycle {
-    ignore_changes = [
-      zone_id,
-      allow_overwrite,
-      multivalue_answer_routing_policy
-    ]
-  }
 }
 
 resource "aws_route53_record" "api" {
-  zone_id = data.aws_route53_zone.main.zone_id
+  zone_id = var.route53_zone_id
   name    = var.api_domain
   type    = "A"
 
@@ -185,14 +103,6 @@ resource "aws_route53_record" "api" {
     name                   = aws_cloudfront_distribution.main.domain_name
     zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
     evaluate_target_health = false
-  }
-
-  lifecycle {
-    ignore_changes = [
-      zone_id,
-      allow_overwrite,
-      multivalue_answer_routing_policy
-    ]
   }
 }
 
