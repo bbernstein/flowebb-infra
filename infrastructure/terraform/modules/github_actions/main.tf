@@ -217,7 +217,13 @@ resource "aws_iam_role_policy" "github_actions" {
             "logs:DescribeLogGroups",
             "logs:DescribeLogStreams",
             "logs:PutRetentionPolicy",
-            "logs:GetLogEvents"
+            "logs:GetLogEvents",
+            "logs:ListTagsForResource",
+            "logs:ListTagsLogGroup",
+            "logs:UntagLogGroup",
+            "logs:TagLogGroup",
+            "logs:TagResource",
+            "logs:UntagResource"
           ]
           Resource = [
             "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-tides-${var.environment}*",
