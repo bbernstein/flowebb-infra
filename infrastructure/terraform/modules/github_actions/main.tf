@@ -190,6 +190,41 @@ resource "aws_iam_role_policy" "github_actions" {
             "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-lambda-role-${var.environment}",
             "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-github-actions-${var.environment}"
           ]
+        },
+        {
+          Effect = "Allow"
+          Action = [
+            "apigateway:GET",
+            "apigateway:POST",
+            "apigateway:PUT",
+            "apigateway:DELETE",
+            "apigateway:PATCH",
+            "apigateway:UpdateRestApiPolicy"
+          ]
+          Resource = [
+            "arn:aws:apigateway:${data.aws_region.current.name}::/apis/*",
+            "arn:aws:apigateway:${data.aws_region.current.name}::/apis"
+          ]
+        },
+        {
+          Effect = "Allow"
+          Action = [
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:PutLogEvents",
+            "logs:DeleteLogGroup",
+            "logs:DeleteLogStream",
+            "logs:DescribeLogGroups",
+            "logs:DescribeLogStreams",
+            "logs:PutRetentionPolicy",
+            "logs:GetLogEvents"
+          ]
+          Resource = [
+            "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-tides-${var.environment}*",
+            "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-stations-${var.environment}*",
+            "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/apigateway/${var.project_name}-${var.environment}*",
+            "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:*:*"
+          ]
         }
       ]
     }
