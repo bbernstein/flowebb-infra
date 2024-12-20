@@ -54,12 +54,14 @@ resource "aws_iam_role_policy" "github_actions" {
             "s3:DeleteBucketWebsite",
             "s3:GetBucketTagging",
             "s3:PutBucketTagging",
+            "s3:GetBucketLogging",
+            "s3:PutBucketLogging",
             "s3:GetAccelerateConfiguration",
             "s3:GetBucketRequestPayment"
           ],
-          "Resource" : [
+          Resource = [
             "${var.frontend_bucket_arn}/*",
-            "${var.frontend_bucket_arn}",
+            var.frontend_bucket_arn,
             "arn:aws:s3:::${var.terraform_state_bucket}/*",
             "arn:aws:s3:::${var.terraform_state_bucket}",
             "arn:aws:s3:::${var.project_name}-station-list-${var.environment}",
