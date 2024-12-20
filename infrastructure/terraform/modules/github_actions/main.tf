@@ -166,6 +166,7 @@ resource "aws_iam_role_policy" "github_actions" {
             "lambda:CreateFunction",
             "lambda:DeleteFunction",
             "lambda:UpdateFunctionConfiguration",
+            "lambda:GetFunctionConfiguration",
             "lambda:ListTags",
             "lambda:TagResource",
             "lambda:UntagResource",
@@ -179,8 +180,7 @@ resource "aws_iam_role_policy" "github_actions" {
             "lambda:GetFunctionCodeSigningConfig",
             "lambda:PutFunctionCodeSigningConfig",
             "lambda:DeleteFunctionCodeSigningConfig",
-            "lambda:ListFunctionsByCodeSigningConfig",
-            "lambda:GetPolicy",
+            "lambda:ListFunctionsByCodeSigningConfig"
           ]
           Resource = [
             "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-tides-${var.environment}",
@@ -202,14 +202,29 @@ resource "aws_iam_role_policy" "github_actions" {
             "iam:DetachRolePolicy",
             "iam:UpdateRole",
             "iam:UpdateRoleDescription",
-            "iam:ListRolePolicies",
             "iam:ListInstanceProfilesForRole",
-            "iam:PassRole"
+            "iam:PassRole",
+            "iam:CreateOpenIDConnectProvider",
+            "iam:DeleteOpenIDConnectProvider",
+            "iam:GetOpenIDConnectProvider",
+            "iam:UpdateOpenIDConnectProviderThumbprint",
+            "iam:AddClientIDToOpenIDConnectProvider",
+            "iam:RemoveClientIDFromOpenIDConnectProvider"
           ]
           Resource = [
             "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-lambda-role-${var.environment}",
-            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-github-actions-${var.environment}"
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-github-actions-${var.environment}",
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
           ]
+        },
+        {
+          Effect = "Allow"
+          Action = [
+            "iam:ListOpenIDConnectProviders",
+            "iam:ListOpenIDConnectProviderTags",
+            "iam:ListRoles"
+          ]
+          Resource = "*"
         },
         {
           Effect = "Allow"
