@@ -147,9 +147,16 @@ resource "aws_iam_role_policy" "github_actions" {
             "cloudfront:TagResource",
             "cloudfront:UntagResource",
             "cloudfront:ListTagsForResource",
-            "cloudfront:GetCloudFrontOriginAccessIdentity"
+            "cloudfront:CreateCloudFrontOriginAccessIdentity",
+            "cloudfront:DeleteCloudFrontOriginAccessIdentity",
+            "cloudfront:GetCloudFrontOriginAccessIdentity",
+            "cloudfront:GetCloudFrontOriginAccessIdentityConfig",
+            "cloudfront:UpdateCloudFrontOriginAccessIdentity"
           ],
-          "Resource" : "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${var.cloudfront_distribution_id}"
+          Resource = [
+            "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${var.cloudfront_distribution_id}",
+            "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:origin-access-identity/*"
+          ]
         },
         {
           Effect = "Allow"
