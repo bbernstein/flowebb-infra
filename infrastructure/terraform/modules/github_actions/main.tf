@@ -151,8 +151,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "Resource" : "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${var.cloudfront_distribution_id}"
         },
         {
-          "Effect" : "Allow",
-          "Action" : [
+          Effect = "Allow"
+          Action = [
             "lambda:UpdateFunctionCode",
             "lambda:GetFunction",
             "lambda:CreateFunction",
@@ -160,9 +160,16 @@ resource "aws_iam_role_policy" "github_actions" {
             "lambda:UpdateFunctionConfiguration",
             "lambda:ListTags",
             "lambda:TagResource",
-            "lambda:UntagResource"
-          ],
-          "Resource" : [
+            "lambda:UntagResource",
+            "lambda:ListVersionsByFunction",
+            "lambda:PublishVersion",
+            "lambda:CreateAlias",
+            "lambda:DeleteAlias",
+            "lambda:UpdateAlias",
+            "lambda:GetAlias",
+            "lambda:ListAliases"
+          ]
+          Resource = [
             "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-tides-${var.environment}",
             "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-stations-${var.environment}"
           ]
