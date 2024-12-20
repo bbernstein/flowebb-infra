@@ -33,7 +33,7 @@ resource "aws_iam_role_policy" "github_actions" {
       "Statement" : [
         {
           "Effect" : "Allow",
-          "Action" : [
+          Action = [
             "s3:PutObject",
             "s3:GetObject",
             "s3:ListBucket",
@@ -57,8 +57,22 @@ resource "aws_iam_role_policy" "github_actions" {
             "s3:GetBucketLogging",
             "s3:PutBucketLogging",
             "s3:GetAccelerateConfiguration",
-            "s3:GetBucketRequestPayment"
-          ],
+            "s3:GetBucketRequestPayment",
+            "s3:GetLifecycleConfiguration",
+            "s3:PutLifecycleConfiguration",
+            "s3:DeleteBucketLifecycle",
+            "s3:GetReplicationConfiguration",
+            "s3:PutReplicationConfiguration",
+            "s3:DeleteBucketReplication",
+            "s3:GetBucketObjectLockConfiguration",
+            "s3:GetEncryptionConfiguration",
+            "s3:PutEncryptionConfiguration",
+            "s3:GetBucketPublicAccessBlock",
+            "s3:PutBucketPublicAccessBlock",
+            "s3:GetBucketLocation",
+            "s3:GetBucketOwnershipControls",
+            "s3:PutBucketOwnershipControls"
+          ]
           Resource = [
             "${var.frontend_bucket_arn}/*",
             var.frontend_bucket_arn,
@@ -151,6 +165,30 @@ resource "aws_iam_role_policy" "github_actions" {
           "Resource" : [
             "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-tides-${var.environment}",
             "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-stations-${var.environment}"
+          ]
+        },
+        {
+          Effect = "Allow"
+          Action = [
+            "iam:GetRole",
+            "iam:CreateRole",
+            "iam:DeleteRole",
+            "iam:PutRolePolicy",
+            "iam:GetRolePolicy",
+            "iam:DeleteRolePolicy",
+            "iam:ListRolePolicies",
+            "iam:ListAttachedRolePolicies",
+            "iam:AttachRolePolicy",
+            "iam:DetachRolePolicy",
+            "iam:UpdateRole",
+            "iam:UpdateRoleDescription",
+            "iam:ListRolePolicies",
+            "iam:ListInstanceProfilesForRole",
+            "iam:PassRole"
+          ]
+          Resource = [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-lambda-role-${var.environment}",
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-github-actions-${var.environment}"
           ]
         }
       ]
