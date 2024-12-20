@@ -4,9 +4,9 @@ resource "aws_apigatewayv2_api" "main" {
   protocol_type = "HTTP"
 
   cors_configuration {
-    allow_origins = ["https://${var.frontend_domain}"]
-    allow_methods = ["GET", "POST", "PUT", "DELETE"]
-    allow_headers = ["*"]
+    allow_origins = [ "https://${var.frontend_domain}" ]
+    allow_methods = [ "GET", "POST", "PUT", "DELETE" ]
+    allow_headers = [ "*" ]
   }
 }
 
@@ -26,47 +26,86 @@ resource "aws_cloudwatch_log_group" "api_logs" {
   retention_in_days = var.log_retention_days
 }
 
+locals {
+  dummy_zip_path = "${path.module}/dummy.zip"
+}
+
+resource "null_resource" "dummy_zip" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "dummy" > ${path.module}/dummy.txt
+      zip ${local.dummy_zip_path} ${path.module}/dummy.txt
+      rm ${path.module}/dummy.txt
+    EOT
+  }
+}
+
 # Create Lambda functions
 resource "aws_lambda_function" "tides" {
-  filename         = var.lambda_jar_path
+  filename         = var.lambda_jar_path != null ? var.lambda_jar_path : local.dummy_zip_path
   source_code_hash = var.lambda_jar_hash
   function_name    = "${var.project_name}-tides-${var.environment}"
-  role            = var.lambda_role_arn
-  handler         = "com.flowebb.lambda.TidesLambda::handleRequest"
-  runtime         = "java11"
-  memory_size     = var.lambda_memory_size
-  timeout         = var.lambda_timeout
+  role             = var.lambda_role_arn
+  handler          = "com.flowebb.lambda.TidesLambda::handleRequest"
+  runtime          = "java11"
+  memory_size      = var.lambda_memory_size
+  timeout          = var.lambda_timeout
+  publish          = var.lambda_publish_version
 
   environment {
     variables = {
       STATION_LIST_BUCKET = var.station_list_bucket_id
-      ALLOWED_ORIGINS    = "https://${var.frontend_domain}"
-      LOG_LEVEL         = "DEBUG"
+      ALLOWED_ORIGINS     = "https://${var.frontend_domain}"
+      LOG_LEVEL           = "DEBUG"
     }
   }
 
-  depends_on = [aws_cloudwatch_log_group.lambda_tides]
+  depends_on = [
+    aws_cloudwatch_log_group.lambda_tides,
+    null_resource.dummy_zip
+  ]
+
+  lifecycle {
+    ignore_changes = [
+      filename,
+      source_code_hash,
+      publish,
+    ]
+  }
 }
 
 resource "aws_lambda_function" "stations" {
-  filename         = var.lambda_jar_path
+  filename         = var.lambda_jar_path != null ? var.lambda_jar_path : local.dummy_zip_path
   source_code_hash = var.lambda_jar_hash
   function_name    = "${var.project_name}-stations-${var.environment}"
-  role            = var.lambda_role_arn
-  handler         = "com.flowebb.lambda.StationsLambda::handleRequest"
-  runtime         = "java11"
-  memory_size     = var.lambda_memory_size
-  timeout         = var.lambda_timeout
+  role             = var.lambda_role_arn
+  handler          = "com.flowebb.lambda.StationsLambda::handleRequest"
+  runtime          = "java11"
+  memory_size      = var.lambda_memory_size
+  timeout          = var.lambda_timeout
+  publish          = var.lambda_publish_version
 
   environment {
     variables = {
       STATION_LIST_BUCKET = var.station_list_bucket_id
-      ALLOWED_ORIGINS    = "https://${var.frontend_domain}"
-      LOG_LEVEL         = "DEBUG"
+      ALLOWED_ORIGINS     = "https://${var.frontend_domain}"
+      LOG_LEVEL           = "DEBUG"
     }
   }
 
-  depends_on = [aws_cloudwatch_log_group.lambda_stations]
+  depends_on = [
+    aws_cloudwatch_log_group.lambda_tides,
+    null_resource.dummy_zip
+  ]
+
+  lifecycle {
+    ignore_changes = [
+      filename,
+      source_code_hash,
+      publish,
+    ]
+
+  }
 }
 
 # Create API Gateway integrations
@@ -76,7 +115,7 @@ resource "aws_apigatewayv2_integration" "tides" {
   integration_method = "POST"
   integration_uri    = aws_lambda_function.tides.invoke_arn
 
-  depends_on = [aws_lambda_function.tides]
+  depends_on = [ aws_lambda_function.tides ]
 }
 
 resource "aws_apigatewayv2_integration" "stations" {
@@ -85,7 +124,7 @@ resource "aws_apigatewayv2_integration" "stations" {
   integration_method = "POST"
   integration_uri    = aws_lambda_function.stations.invoke_arn
 
-  depends_on = [aws_lambda_function.stations]
+  depends_on = [ aws_lambda_function.stations ]
 }
 
 # Create routes
@@ -94,7 +133,7 @@ resource "aws_apigatewayv2_route" "tides" {
   route_key = "GET /api/tides"
   target    = "integrations/${aws_apigatewayv2_integration.tides.id}"
 
-  depends_on = [aws_apigatewayv2_integration.tides]
+  depends_on = [ aws_apigatewayv2_integration.tides ]
 }
 
 resource "aws_apigatewayv2_route" "stations" {
@@ -102,7 +141,7 @@ resource "aws_apigatewayv2_route" "stations" {
   route_key = "GET /api/stations"
   target    = "integrations/${aws_apigatewayv2_integration.stations.id}"
 
-  depends_on = [aws_apigatewayv2_integration.stations]
+  depends_on = [ aws_apigatewayv2_integration.stations ]
 }
 
 # Create API Gateway stage
@@ -115,17 +154,17 @@ resource "aws_apigatewayv2_stage" "main" {
     destination_arn = aws_cloudwatch_log_group.api_logs.arn
     format = jsonencode({
       requestId      = "$context.requestId"
-      ip            = "$context.identity.sourceIp"
-      requestTime   = "$context.requestTime"
-      httpMethod    = "$context.httpMethod"
-      resourcePath  = "$context.resourcePath"
-      status        = "$context.status"
-      protocol      = "$context.protocol"
+      ip             = "$context.identity.sourceIp"
+      requestTime    = "$context.requestTime"
+      httpMethod     = "$context.httpMethod"
+      resourcePath   = "$context.resourcePath"
+      status         = "$context.status"
+      protocol       = "$context.protocol"
       responseLength = "$context.responseLength"
     })
   }
 
-  depends_on = [aws_cloudwatch_log_group.api_logs]
+  depends_on = [ aws_cloudwatch_log_group.api_logs ]
 }
 
 # Create Lambda permissions
@@ -150,12 +189,12 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   alarm_name          = "${var.project_name}-${var.environment}-lambda-errors"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "1"
-  metric_name        = "Errors"
-  namespace          = "AWS/Lambda"
-  period             = "300"
-  statistic          = "Sum"
-  threshold          = "0"
-  alarm_description  = "Lambda function error rate"
+  metric_name         = "Errors"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "0"
+  alarm_description   = "Lambda function error rate"
 
   dimensions = {
     FunctionName = aws_lambda_function.tides.function_name

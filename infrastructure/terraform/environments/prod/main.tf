@@ -40,11 +40,6 @@ module "storage" {
   frontend_domain = var.frontend_domain
 }
 
-# Build Lambda JAR
-module "lambda_build" {
-  source = "../../modules/lambda_build"
-}
-
 # Create base networking resources
 module "base_networking" {
   source = "../../modules/base_networking"
@@ -86,10 +81,7 @@ module "compute" {
   frontend_domain        = var.frontend_domain
   log_retention_days     = 30
 
-  lambda_jar_path        = module.lambda_build.lambda_jar_path
-  lambda_jar_hash        = module.lambda_build.jar_hash
-
-  depends_on = [module.iam, module.lambda_build]
+  depends_on = [module.iam]
 }
 
 # Create edge networking resources last
@@ -140,28 +132,3 @@ module "github_actions" {
     module.edge_networking
   ]
 }
-
-# Finally create DNS and CDN configuration
-# module "networking" {
-#   source = "../../modules/networking"
-#
-#   providers = {
-#     aws           = aws
-#     aws.us-east-1 = aws.us-east-1
-#   }
-#
-#   project_name    = var.project_name
-#   environment     = var.environment
-#   domain_name     = var.domain_name
-#   frontend_domain = var.frontend_domain
-#   api_domain = var.api_domain
-#
-#   # Pass the resources needed for CloudFront
-#   frontend_bucket_domain = module.storage.frontend_bucket_domain
-#   frontend_bucket_arn    = module.storage.frontend_bucket_arn
-#   api_gateway_endpoint   = module.compute.api_gateway_endpoint
-#   api_gateway_hostname   = module.compute.api_gateway_hostname
-#   cloudfront_logs_bucket = module.storage.cloudfront_logs_bucket
-#
-#   depends_on = [ module.storage, module.compute ]
-# }

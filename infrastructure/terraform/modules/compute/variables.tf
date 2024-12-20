@@ -51,12 +51,20 @@ variable "log_retention_days" {
   default     = 30
 }
 
+variable "lambda_publish_version" {
+  description = "Whether to publish a new Lambda version"
+  type        = bool
+  default     = false
+}
+
 variable "lambda_jar_path" {
   description = "Path to the Lambda JAR file"
   type        = string
+  default     = null  # Make it optional
 }
 
 variable "lambda_jar_hash" {
   description = "Hash of the Lambda JAR file"
   type        = string
+  default     = null  # Make it optional
 }
