@@ -180,7 +180,8 @@ resource "aws_iam_role_policy" "github_actions" {
             "lambda:GetFunctionCodeSigningConfig",
             "lambda:PutFunctionCodeSigningConfig",
             "lambda:DeleteFunctionCodeSigningConfig",
-            "lambda:ListFunctionsByCodeSigningConfig"
+            "lambda:ListFunctionsByCodeSigningConfig",
+            "lambda:GetPolicy",
           ]
           Resource = [
             "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-tides-${var.environment}",
