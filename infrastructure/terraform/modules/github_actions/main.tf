@@ -146,7 +146,8 @@ resource "aws_iam_role_policy" "github_actions" {
             "cloudfront:UpdateDistribution",
             "cloudfront:TagResource",
             "cloudfront:UntagResource",
-            "cloudfront:ListTagsForResource"
+            "cloudfront:ListTagsForResource",
+            "cloudfront:GetCloudFrontOriginAccessIdentity"
           ],
           "Resource" : "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${var.cloudfront_distribution_id}"
         },
@@ -167,7 +168,12 @@ resource "aws_iam_role_policy" "github_actions" {
             "lambda:DeleteAlias",
             "lambda:UpdateAlias",
             "lambda:GetAlias",
-            "lambda:ListAliases"
+            "lambda:ListAliases",
+            "lambda:GetFunctionCodeSigningConfig",
+            "lambda:PutFunctionCodeSigningConfig",
+            "lambda:DeleteFunctionCodeSigningConfig",
+            "lambda:ListFunctionsByCodeSigningConfig",
+            "lambda:GetPolicy",
           ]
           Resource = [
             "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-tides-${var.environment}",
@@ -237,6 +243,25 @@ resource "aws_iam_role_policy" "github_actions" {
             "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-stations-${var.environment}*",
             "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/apigateway/${var.project_name}-${var.environment}*",
             "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:*:*"
+          ]
+        },
+        {
+          Effect = "Allow"
+          Action = [
+            "cloudwatch:PutMetricAlarm",
+            "cloudwatch:DeleteAlarms",
+            "cloudwatch:DescribeAlarms",
+            "cloudwatch:GetMetricStatistics",
+            "cloudwatch:ListMetrics",
+            "cloudwatch:PutMetricData",
+            "cloudwatch:EnableAlarmActions",
+            "cloudwatch:DisableAlarmActions",
+            "cloudwatch:ListTagsForResource",
+            "cloudwatch:TagResource",
+            "cloudwatch:UntagResource"
+          ]
+          Resource = [
+            "arn:aws:cloudwatch:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:alarm:${var.project_name}-${var.environment}-*"
           ]
         }
       ]
