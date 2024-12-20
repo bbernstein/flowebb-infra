@@ -132,6 +132,9 @@ module "github_actions" {
   frontend_bucket_arn        = module.storage.frontend_bucket_arn
   cloudfront_distribution_id = module.edge_networking.cloudfront_distribution_id
 
+  terraform_state_bucket     = "flowebb-terraform-state-bucket"
+  terraform_state_lock_table = "terraform-state-lock"
+
   depends_on = [
     module.storage,
     module.edge_networking
