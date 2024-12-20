@@ -36,19 +36,78 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:PutObject",
           "s3:GetObject",
           "s3:ListBucket",
-          "s3:DeleteObject"
+          "s3:DeleteObject",
+          "s3:GetBucketPolicy",
+          "s3:PutBucketPolicy",
+          "s3:CreateBucket",
+          "s3:DeleteBucket",
+          "s3:HeadBucket",
+          "s3:GetBucketVersioning",
+          "s3:PutBucketVersioning",
+          "s3:GetBucketAcl",
+          "s3:PutBucketAcl",
+          "s3:GetBucketCORS",
+          "s3:PutBucketCORS"
         ]
         Resource = [
           "${var.frontend_bucket_arn}/*",
-          var.frontend_bucket_arn
+          var.frontend_bucket_arn,
+          "arn:aws:s3:::${var.terraform_state_bucket}/*",
+          "arn:aws:s3:::${var.terraform_state_bucket}",
+          "arn:aws:s3:::${var.project_name}-station-list-${var.environment}",
+          "arn:aws:s3:::${var.project_name}-station-list-${var.environment}/*",
+          "arn:aws:s3:::${var.project_name}-cloudfront-logs-${var.environment}",
+          "arn:aws:s3:::${var.project_name}-cloudfront-logs-${var.environment}/*"
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:DescribeTable",
+          "dynamodb:CreateTable",
+          "dynamodb:DeleteTable",
+          "dynamodb:UpdateTable",
+          "dynamodb:ListTables"
+        ]
+        Resource = [
+          "arn:aws:dynamodb:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:table/${var.terraform_state_lock_table}",
+          "arn:aws:dynamodb:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:table/stations-cache",
+          "arn:aws:dynamodb:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:table/harmonic-constants-cache"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "route53:ListHostedZones",
+          "route53:GetHostedZone",
+          "route53:ListResourceRecordSets",
+          "route53:ChangeResourceRecordSets"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "acm:RequestCertificate",
+          "acm:DescribeCertificate",
+          "acm:DeleteCertificate",
+          "acm:ListCertificates"
+        ]
+        Resource = "*"
       },
       {
         Effect = "Allow"
         Action = [
           "cloudfront:CreateInvalidation",
           "cloudfront:GetInvalidation",
-          "cloudfront:ListInvalidations"
+          "cloudfront:ListInvalidations",
+          "cloudfront:CreateDistribution",
+          "cloudfront:DeleteDistribution",
+          "cloudfront:GetDistribution",
+          "cloudfront:UpdateDistribution"
         ]
         Resource = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${var.cloudfront_distribution_id}"
       },
@@ -56,7 +115,10 @@ resource "aws_iam_role_policy" "github_actions" {
         Effect = "Allow"
         Action = [
           "lambda:UpdateFunctionCode",
-          "lambda:GetFunction"
+          "lambda:GetFunction",
+          "lambda:CreateFunction",
+          "lambda:DeleteFunction",
+          "lambda:UpdateFunctionConfiguration"
         ]
         Resource = [
           "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-tides-${var.environment}",
