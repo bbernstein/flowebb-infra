@@ -27,6 +27,6 @@ output "dynamodb_table_arns" {
   description = "ARNs of all DynamoDB tables"
   value = [
     aws_dynamodb_table.stations_cache.arn,
-    aws_dynamodb_table.harmonic_constants_cache.arn
+    aws_dynamodb_table.tide_predictions_cache.arn
   ]
 }
