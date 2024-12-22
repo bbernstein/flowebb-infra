@@ -105,7 +105,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "Resource" : [
             "arn:aws:dynamodb:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:table/${var.terraform_state_lock_table}",
             "arn:aws:dynamodb:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:table/stations-cache",
-            "arn:aws:dynamodb:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:table/tide_predictions_cache"
+            "arn:aws:dynamodb:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:table/tide-predictions-cache"
           ]
         },
         {
