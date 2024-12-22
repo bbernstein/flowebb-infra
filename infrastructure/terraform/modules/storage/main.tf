@@ -78,19 +78,30 @@ resource "aws_dynamodb_table" "stations_cache" {
   }
 }
 
-resource "aws_dynamodb_table" "harmonic_constants_cache" {
-  name           = "harmonic-constants-cache"
+resource "aws_dynamodb_table" "tide_predictions_cache" {
+  name           = "tide-predictions-cache"
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "stationId"
+  range_key      = "date"
 
   attribute {
     name = "stationId"
     type = "S"
   }
 
+  attribute {
+    name = "date"
+    type = "S"
+  }
+
   ttl {
     attribute_name = "ttl"
     enabled        = true
+  }
+
+  tags = {
+    Name        = "tide-predictions-cache"
+    Environment = var.environment
   }
 }
 
