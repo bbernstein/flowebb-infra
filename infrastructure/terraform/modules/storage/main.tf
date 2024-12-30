@@ -1,3 +1,14 @@
+terraform {
+  required_version = ">= 1.0.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
 resource "aws_s3_bucket" "frontend" {
   bucket = var.frontend_domain
 }
@@ -45,7 +56,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "station_list" {
     status = "Enabled"
 
     expiration {
-      days = 7
+      days = var.lifecycle_rule_days
     }
   }
 }

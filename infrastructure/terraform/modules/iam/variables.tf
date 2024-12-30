@@ -17,9 +17,3 @@ variable "station_list_bucket_arn" {
   description = "ARN of the station list S3 bucket"
   type        = string
 }
-
-variable "enable_cloudwatch_logs" {
-  description = "Enable CloudWatch Logs permissions"
-  type        = bool
-  default     = true
-}
