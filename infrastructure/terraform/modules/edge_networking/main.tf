@@ -6,9 +6,9 @@ resource "aws_cloudfront_origin_access_identity" "frontend" {
 
 resource "aws_cloudfront_distribution" "main" {
   enabled             = true
-  is_ipv6_enabled    = true
+  is_ipv6_enabled     = true
   default_root_object = "index.html"
-  aliases            = [var.frontend_domain, var.api_domain]
+  aliases             = [var.frontend_domain, var.api_domain]
 
   origin {
     domain_name = var.frontend_bucket_domain
@@ -66,8 +66,8 @@ resource "aws_cloudfront_distribution" "main" {
 
   logging_config {
     include_cookies = true
-    bucket         = "${var.cloudfront_logs_bucket}.s3.amazonaws.com"
-    prefix         = "cloudfront/"
+    bucket          = "${var.cloudfront_logs_bucket}.s3.amazonaws.com"
+    prefix          = "cloudfront/"
   }
 
   viewer_certificate {
@@ -114,8 +114,8 @@ resource "aws_s3_bucket_policy" "frontend" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "AllowCloudFrontAccess"
-        Effect    = "Allow"
+        Sid    = "AllowCloudFrontAccess"
+        Effect = "Allow"
         Principal = {
           AWS = aws_cloudfront_origin_access_identity.frontend.iam_arn
         }

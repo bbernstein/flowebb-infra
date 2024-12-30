@@ -1,12 +1,27 @@
+terraform {
+  required_version = ">= 1.0.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.0"
+    }
+  }
+}
+
 # First create API Gateway
 resource "aws_apigatewayv2_api" "main" {
   name          = "${var.project_name}-api-${var.environment}"
   protocol_type = "HTTP"
 
   cors_configuration {
-    allow_origins = [ "https://${var.frontend_domain}" ]
-    allow_methods = [ "GET", "POST", "PUT", "DELETE" ]
-    allow_headers = [ "*" ]
+    allow_origins = ["https://${var.frontend_domain}"]
+    allow_methods = ["GET", "POST", "PUT", "DELETE"]
+    allow_headers = ["*"]
   }
 }
 
@@ -115,7 +130,7 @@ resource "aws_apigatewayv2_integration" "tides" {
   integration_method = "POST"
   integration_uri    = aws_lambda_function.tides.invoke_arn
 
-  depends_on = [ aws_lambda_function.tides ]
+  depends_on = [aws_lambda_function.tides]
 }
 
 resource "aws_apigatewayv2_integration" "stations" {
@@ -124,7 +139,7 @@ resource "aws_apigatewayv2_integration" "stations" {
   integration_method = "POST"
   integration_uri    = aws_lambda_function.stations.invoke_arn
 
-  depends_on = [ aws_lambda_function.stations ]
+  depends_on = [aws_lambda_function.stations]
 }
 
 # Create routes
@@ -133,7 +148,7 @@ resource "aws_apigatewayv2_route" "tides" {
   route_key = "GET /api/tides"
   target    = "integrations/${aws_apigatewayv2_integration.tides.id}"
 
-  depends_on = [ aws_apigatewayv2_integration.tides ]
+  depends_on = [aws_apigatewayv2_integration.tides]
 }
 
 resource "aws_apigatewayv2_route" "stations" {
@@ -141,7 +156,7 @@ resource "aws_apigatewayv2_route" "stations" {
   route_key = "GET /api/stations"
   target    = "integrations/${aws_apigatewayv2_integration.stations.id}"
 
-  depends_on = [ aws_apigatewayv2_integration.stations ]
+  depends_on = [aws_apigatewayv2_integration.stations]
 }
 
 # Create API Gateway stage
@@ -164,7 +179,7 @@ resource "aws_apigatewayv2_stage" "main" {
     })
   }
 
-  depends_on = [ aws_cloudwatch_log_group.api_logs ]
+  depends_on = [aws_cloudwatch_log_group.api_logs]
 }
 
 # Create Lambda permissions

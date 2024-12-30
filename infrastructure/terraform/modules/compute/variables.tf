@@ -8,18 +8,8 @@ variable "environment" {
   type        = string
 }
 
-variable "domain_name" {
-  description = "Root domain name"
-  type        = string
-}
-
 variable "frontend_domain" {
   description = "Frontend application domain"
-  type        = string
-}
-
-variable "api_domain" {
-  description = "API domain"
   type        = string
 }
 
@@ -60,11 +50,11 @@ variable "lambda_publish_version" {
 variable "lambda_jar_path" {
   description = "Path to the Lambda JAR file"
   type        = string
-  default     = null  # Make it optional
+  default     = null # Make it optional
 }
 
 variable "lambda_jar_hash" {
   description = "Hash of the Lambda JAR file"
   type        = string
-  default     = null  # Make it optional
+  default     = null # Make it optional
 }

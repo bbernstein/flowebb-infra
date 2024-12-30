@@ -1,5 +1,13 @@
-data "aws_region" "current" {}
-data "aws_caller_identity" "current" {}
+terraform {
+  required_version = ">= 1.0.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
 
 resource "aws_iam_role" "lambda_role" {
   name = "${var.project_name}-lambda-role-${var.environment}"

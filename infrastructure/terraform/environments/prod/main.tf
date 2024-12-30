@@ -1,4 +1,6 @@
 terraform {
+  required_version = ">= 1.0.0"
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -49,8 +51,6 @@ module "base_networking" {
     aws.us-east-1 = aws.us-east-1
   }
 
-  project_name    = var.project_name
-  environment     = var.environment
   domain_name     = var.domain_name
   frontend_domain = var.frontend_domain
   api_domain      = var.api_domain
@@ -65,7 +65,7 @@ module "iam" {
   dynamodb_table_arns     = module.storage.dynamodb_table_arns
   station_list_bucket_arn = module.storage.station_list_bucket_arn
 
-  depends_on = [ module.storage ]
+  depends_on = [module.storage]
 }
 
 # Create the API Gateway and Lambda functions
@@ -76,8 +76,6 @@ module "compute" {
   environment            = var.environment
   lambda_role_arn        = module.iam.lambda_role_arn
   station_list_bucket_id = module.storage.station_list_bucket_id
-  api_domain             = var.api_domain
-  domain_name            = var.domain_name
   frontend_domain        = var.frontend_domain
   log_retention_days     = 30
 
@@ -93,14 +91,10 @@ module "edge_networking" {
     aws.us-east-1 = aws.us-east-1
   }
 
-  project_name           = var.project_name
-  environment            = var.environment
-  domain_name            = var.domain_name
   frontend_domain        = var.frontend_domain
   api_domain             = var.api_domain
   frontend_bucket_domain = module.storage.frontend_bucket_domain
   frontend_bucket_arn    = module.storage.frontend_bucket_arn
-  api_gateway_endpoint   = module.compute.api_gateway_endpoint
   api_gateway_hostname   = module.compute.api_gateway_hostname
   cloudfront_logs_bucket = module.storage.cloudfront_logs_bucket
   certificate_arn        = module.base_networking.certificate_arn
