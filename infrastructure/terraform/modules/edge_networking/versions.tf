@@ -5,8 +5,9 @@ terraform {
     aws = {
       source                = "hashicorp/aws"
       version               = "~> 5.0"
-      alias                 = "us-east-1"
-      configuration_aliases = ["us-east-1"]
+
+      # tflint:ignore:AWS_REGION
+      configuration_aliases = [aws.us-east-1]
     }
   }
 }
