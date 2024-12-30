@@ -50,11 +50,11 @@ variable "lambda_publish_version" {
 variable "lambda_jar_path" {
   description = "Path to the Lambda JAR file"
   type        = string
-  default     = null  # Make it optional
+  default     = null # Make it optional
 }
 
 variable "lambda_jar_hash" {
   description = "Hash of the Lambda JAR file"
   type        = string
-  default     = null  # Make it optional
+  default     = null # Make it optional
 }

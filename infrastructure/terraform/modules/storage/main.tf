@@ -74,9 +74,9 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
 }
 
 resource "aws_dynamodb_table" "stations_cache" {
-  name           = "stations-cache"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "stationId"
+  name         = "stations-cache"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "stationId"
 
   attribute {
     name = "stationId"
@@ -90,10 +90,10 @@ resource "aws_dynamodb_table" "stations_cache" {
 }
 
 resource "aws_dynamodb_table" "tide_predictions_cache" {
-  name           = "tide-predictions-cache"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "stationId"
-  range_key      = "date"
+  name         = "tide-predictions-cache"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "stationId"
+  range_key    = "date"
 
   attribute {
     name = "stationId"
@@ -130,6 +130,6 @@ resource "aws_s3_bucket_ownership_controls" "cloudfront_logs" {
 
 resource "aws_s3_bucket_acl" "cloudfront_logs" {
   depends_on = [aws_s3_bucket_ownership_controls.cloudfront_logs]
-  bucket = aws_s3_bucket.cloudfront_logs.id
-  acl    = "private"
+  bucket     = aws_s3_bucket.cloudfront_logs.id
+  acl        = "private"
 }
