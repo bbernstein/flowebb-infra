@@ -65,7 +65,7 @@ module "iam" {
   dynamodb_table_arns     = module.storage.dynamodb_table_arns
   station_list_bucket_arn = module.storage.station_list_bucket_arn
 
-  depends_on = [ module.storage ]
+  depends_on = [module.storage]
 }
 
 # Create the API Gateway and Lambda functions
@@ -79,7 +79,7 @@ module "compute" {
   frontend_domain        = var.frontend_domain
   log_retention_days     = 30
 
-  depends_on = [ module.iam ]
+  depends_on = [module.iam]
 }
 
 # Create edge networking resources last
