@@ -61,11 +61,12 @@ resource "aws_lambda_function" "tides" {
   source_code_hash = var.lambda_jar_hash
   function_name    = "${var.project_name}-tides-${var.environment}"
   role             = var.lambda_role_arn
-  handler          = "com.flowebb.lambda.TidesLambda::handleRequest"
-  runtime          = "java11"
+  handler          = "bootstrap"    # Change to Go bootstrap handler
+  runtime          = "provided.al2" # Change to AL2 runtime for Go
   memory_size      = var.lambda_memory_size
   timeout          = var.lambda_timeout
   publish          = var.lambda_publish_version
+  architectures    = ["arm64"] # Add ARM64 architecture for Go
 
   environment {
     variables = {
@@ -94,11 +95,12 @@ resource "aws_lambda_function" "stations" {
   source_code_hash = var.lambda_jar_hash
   function_name    = "${var.project_name}-stations-${var.environment}"
   role             = var.lambda_role_arn
-  handler          = "com.flowebb.lambda.StationsLambda::handleRequest"
-  runtime          = "java11"
+  handler          = "bootstrap"    # Change to Go bootstrap handler
+  runtime          = "provided.al2" # Change to AL2 runtime for Go
   memory_size      = var.lambda_memory_size
   timeout          = var.lambda_timeout
   publish          = var.lambda_publish_version
+  architectures    = ["arm64"] # Add ARM64 architecture for Go
 
   environment {
     variables = {
@@ -109,7 +111,7 @@ resource "aws_lambda_function" "stations" {
   }
 
   depends_on = [
-    aws_cloudwatch_log_group.lambda_tides,
+    aws_cloudwatch_log_group.lambda_stations,
     null_resource.dummy_zip
   ]
 
@@ -119,7 +121,6 @@ resource "aws_lambda_function" "stations" {
       source_code_hash,
       publish,
     ]
-
   }
 }
 
