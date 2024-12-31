@@ -28,8 +28,3 @@ resource "null_resource" "build_lambda" {
     EOT
   }
 }
-
-locals {
-  stations_lambda_zip_path = "${path.root}/../../../../backend-go/stations.zip"
-  tides_lambda_zip_path    = "${path.root}/../../../../backend-go/tides.zip"
-}
