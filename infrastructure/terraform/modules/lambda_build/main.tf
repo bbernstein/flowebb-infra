@@ -19,10 +19,17 @@ resource "null_resource" "build_lambda" {
   }
 
   provisioner "local-exec" {
-    command = "cd ${path.root}/../../../../backend && ./gradlew build"
+    command = <<-EOT
+      cd ${path.root}/../../../../backend-go && \
+      GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o bootstrap ./cmd/stations && \
+      zip stations.zip bootstrap && \
+      GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o bootstrap ./cmd/tides && \
+      zip tides.zip bootstrap
+    EOT
   }
 }
 
 locals {
-  lambda_jar_path = "${path.root}/../../../../backend/build/libs/tides-be.jar"
+  stations_lambda_zip_path = "${path.root}/../../../../backend-go/stations.zip"
+  tides_lambda_zip_path    = "${path.root}/../../../../backend-go/tides.zip"
 }

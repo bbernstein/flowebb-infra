@@ -26,13 +26,13 @@ variable "station_list_bucket_id" {
 variable "lambda_memory_size" {
   description = "Amount of memory in MB for Lambda functions"
   type        = number
-  default     = 512
+  default     = 256
 }
 
 variable "lambda_timeout" {
   description = "Timeout in seconds for Lambda functions"
   type        = number
-  default     = 120
+  default     = 30
 }
 
 variable "log_retention_days" {
