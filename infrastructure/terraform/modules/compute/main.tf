@@ -70,9 +70,15 @@ resource "aws_lambda_function" "tides" {
 
   environment {
     variables = {
-      STATION_LIST_BUCKET = var.station_list_bucket_id
-      ALLOWED_ORIGINS     = "https://${var.frontend_domain}"
-      LOG_LEVEL           = "DEBUG"
+      STATION_LIST_BUCKET         = var.station_list_bucket_id
+      ALLOWED_ORIGINS             = "https://${var.frontend_domain}"
+      LOG_LEVEL                   = "DEBUG"
+      CACHE_LRU_SIZE              = tostring(var.cache_lru_size)
+      CACHE_LRU_TTL_MINUTES       = tostring(var.cache_lru_ttl_minutes)
+      CACHE_DYNAMO_TTL_DAYS       = tostring(var.cache_dynamo_ttl_days)
+      CACHE_STATION_LIST_TTL_DAYS = tostring(var.cache_station_list_ttl_days)
+      CACHE_ENABLE_LRU            = tostring(var.cache_enable_lru)
+      CACHE_ENABLE_DYNAMO         = tostring(var.cache_enable_dynamo)
     }
   }
 
@@ -104,9 +110,15 @@ resource "aws_lambda_function" "stations" {
 
   environment {
     variables = {
-      STATION_LIST_BUCKET = var.station_list_bucket_id
-      ALLOWED_ORIGINS     = "https://${var.frontend_domain}"
-      LOG_LEVEL           = "DEBUG"
+      STATION_LIST_BUCKET         = var.station_list_bucket_id
+      ALLOWED_ORIGINS             = "https://${var.frontend_domain}"
+      LOG_LEVEL                   = "DEBUG"
+      CACHE_LRU_SIZE              = tostring(var.cache_lru_size)
+      CACHE_LRU_TTL_MINUTES       = tostring(var.cache_lru_ttl_minutes)
+      CACHE_DYNAMO_TTL_DAYS       = tostring(var.cache_dynamo_ttl_days)
+      CACHE_STATION_LIST_TTL_DAYS = tostring(var.cache_station_list_ttl_days)
+      CACHE_ENABLE_LRU            = tostring(var.cache_enable_lru)
+      CACHE_ENABLE_DYNAMO         = tostring(var.cache_enable_dynamo)
     }
   }
 
