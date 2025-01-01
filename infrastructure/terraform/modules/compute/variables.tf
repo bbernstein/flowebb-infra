@@ -84,12 +84,6 @@ variable "cache_station_list_ttl_days" {
   default     = 1
 }
 
-variable "cache_station_list_size" {
-  description = "Size of the station list cache"
-  type        = number
-  default     = 500
-}
-
 variable "cache_enable_lru" {
   description = "Enable LRU caching"
   type        = bool
