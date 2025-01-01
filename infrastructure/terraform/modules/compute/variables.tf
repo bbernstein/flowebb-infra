@@ -58,3 +58,46 @@ variable "lambda_jar_hash" {
   type        = string
   default     = null # Make it optional
 }
+
+# Cache configuration variables
+variable "cache_lru_size" {
+  description = "Size of the LRU cache"
+  type        = number
+  default     = 1000
+}
+
+variable "cache_lru_ttl_minutes" {
+  description = "TTL for LRU cache entries in minutes"
+  type        = number
+  default     = 15
+}
+
+variable "cache_dynamo_ttl_days" {
+  description = "TTL for DynamoDB cache entries in days"
+  type        = number
+  default     = 7
+}
+
+variable "cache_station_list_ttl_days" {
+  description = "TTL for station list cache in days"
+  type        = number
+  default     = 1
+}
+
+variable "cache_station_list_size" {
+  description = "Size of the station list cache"
+  type        = number
+  default     = 500
+}
+
+variable "cache_enable_lru" {
+  description = "Enable LRU caching"
+  type        = bool
+  default     = true
+}
+
+variable "cache_enable_dynamo" {
+  description = "Enable DynamoDB caching"
+  type        = bool
+  default     = true
+}
