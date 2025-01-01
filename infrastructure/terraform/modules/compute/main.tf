@@ -110,9 +110,9 @@ resource "aws_lambda_function" "stations" {
 
   environment {
     variables = {
-      STATION_LIST_BUCKET = var.station_list_bucket_id
-      ALLOWED_ORIGINS     = "https://${var.frontend_domain}"
-      LOG_LEVEL           = "DEBUG"
+      STATION_LIST_BUCKET         = var.station_list_bucket_id
+      ALLOWED_ORIGINS             = "https://${var.frontend_domain}"
+      LOG_LEVEL                   = "DEBUG"
       CACHE_LRU_SIZE              = tostring(var.cache_lru_size)
       CACHE_LRU_TTL_MINUTES       = tostring(var.cache_lru_ttl_minutes)
       CACHE_DYNAMO_TTL_DAYS       = tostring(var.cache_dynamo_ttl_days)
