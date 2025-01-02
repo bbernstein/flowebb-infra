@@ -95,3 +95,15 @@ variable "cache_enable_dynamo" {
   type        = bool
   default     = true
 }
+
+variable "cache_batch_size" {
+  description = "Size of DynamoDB batch operations"
+  type        = number
+  default     = 25
+}
+
+variable "cache_max_batch_retries" {
+  description = "Maximum number of retries for batch operations"
+  type        = number
+  default     = 3
+}

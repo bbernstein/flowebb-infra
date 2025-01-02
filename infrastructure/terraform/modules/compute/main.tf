@@ -77,6 +77,8 @@ resource "aws_lambda_function" "tides" {
       CACHE_LRU_TTL_MINUTES       = tostring(var.cache_lru_ttl_minutes)
       CACHE_DYNAMO_TTL_DAYS       = tostring(var.cache_dynamo_ttl_days)
       CACHE_STATION_LIST_TTL_DAYS = tostring(var.cache_station_list_ttl_days)
+      CACHE_BATCH_SIZE            = tostring(var.cache_batch_size)
+      CACHE_MAX_BATCH_RETRIES     = tostring(var.cache_max_batch_retries)
       CACHE_ENABLE_LRU            = tostring(var.cache_enable_lru)
       CACHE_ENABLE_DYNAMO         = tostring(var.cache_enable_dynamo)
     }
@@ -117,6 +119,8 @@ resource "aws_lambda_function" "stations" {
       CACHE_LRU_TTL_MINUTES       = tostring(var.cache_lru_ttl_minutes)
       CACHE_DYNAMO_TTL_DAYS       = tostring(var.cache_dynamo_ttl_days)
       CACHE_STATION_LIST_TTL_DAYS = tostring(var.cache_station_list_ttl_days)
+      CACHE_BATCH_SIZE            = tostring(var.cache_batch_size)
+      CACHE_MAX_BATCH_RETRIES     = tostring(var.cache_max_batch_retries)
       CACHE_ENABLE_LRU            = tostring(var.cache_enable_lru)
       CACHE_ENABLE_DYNAMO         = tostring(var.cache_enable_dynamo)
     }
