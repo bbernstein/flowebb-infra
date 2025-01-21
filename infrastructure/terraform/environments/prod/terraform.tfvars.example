@@ -1,0 +1,6 @@
+aws_region      = "us-east-1"
+environment     = "prod"
+project_name    = "myproject"
+domain_name     = "example.com"
+frontend_domain = "app.example.com"
+api_domain      = "api.example.com"
