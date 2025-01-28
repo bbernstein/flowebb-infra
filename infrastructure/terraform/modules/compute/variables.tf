@@ -72,6 +72,19 @@ variable "cache_lru_ttl_minutes" {
   default     = 15
 }
 
+# Cache configuration variables
+variable "cache_graphql_lru_size" {
+  description = "Size of the LRU cache"
+  type        = number
+  default     = 1000
+}
+
+variable "cache_graphql_lru_ttl_minutes" {
+  description = "TTL for LRU cache entries in minutes"
+  type        = number
+  default     = 15
+}
+
 variable "cache_dynamo_ttl_days" {
   description = "TTL for DynamoDB cache entries in days"
   type        = number

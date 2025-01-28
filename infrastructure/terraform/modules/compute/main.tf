@@ -14,15 +14,33 @@ terraform {
 }
 
 # First create API Gateway
+# resource "aws_apigatewayv2_api" "main" {
+#   name          = "${var.project_name}-api-${var.environment}"
+#   protocol_type = "HTTP"
+#
+#   cors_configuration {
+#     allow_origins = ["https://${var.frontend_domain}"]
+#     allow_methods = ["GET", "POST", "PUT", "DELETE"]
+#     allow_headers = ["*"]
+#   }
+# }
+
 resource "aws_apigatewayv2_api" "main" {
   name          = "${var.project_name}-api-${var.environment}"
   protocol_type = "HTTP"
-
-  cors_configuration {
-    allow_origins = ["https://${var.frontend_domain}"]
-    allow_methods = ["GET", "POST", "PUT", "DELETE"]
-    allow_headers = ["*"]
-  }
+  body = jsonencode({
+    openapi = "3.0.0"
+    paths = {
+      "/graphql" = {
+        post = {
+          x-amazon-apigateway-integration = {
+            type = "AWS_PROXY"
+            uri  = aws_lambda_function.graphql.invoke_arn
+          }
+        }
+      }
+    }
+  })
 }
 
 # Create CloudWatch log groups before Lambda functions
@@ -33,6 +51,11 @@ resource "aws_cloudwatch_log_group" "lambda_tides" {
 
 resource "aws_cloudwatch_log_group" "lambda_stations" {
   name              = "/aws/lambda/${var.project_name}-stations-${var.environment}"
+  retention_in_days = var.log_retention_days
+}
+
+resource "aws_cloudwatch_log_group" "lambda_graphql" {
+  name              = "/aws/lambda/${var.project_name}-graphql-${var.environment}"
   retention_in_days = var.log_retention_days
 }
 
@@ -73,8 +96,8 @@ resource "aws_lambda_function" "tides" {
       STATION_LIST_BUCKET         = var.station_list_bucket_id
       ALLOWED_ORIGINS             = "https://${var.frontend_domain}"
       LOG_LEVEL                   = "DEBUG"
-      CACHE_LRU_SIZE              = tostring(var.cache_lru_size)
-      CACHE_LRU_TTL_MINUTES       = tostring(var.cache_lru_ttl_minutes)
+      CACHE_TIDE_LRU_SIZE         = tostring(var.cache_lru_size)
+      CACHE_TIDE_LRU_TTL_MINUTES  = tostring(var.cache_lru_ttl_minutes)
       CACHE_DYNAMO_TTL_DAYS       = tostring(var.cache_dynamo_ttl_days)
       CACHE_STATION_LIST_TTL_DAYS = tostring(var.cache_station_list_ttl_days)
       CACHE_BATCH_SIZE            = tostring(var.cache_batch_size)
@@ -115,8 +138,8 @@ resource "aws_lambda_function" "stations" {
       STATION_LIST_BUCKET         = var.station_list_bucket_id
       ALLOWED_ORIGINS             = "https://${var.frontend_domain}"
       LOG_LEVEL                   = "DEBUG"
-      CACHE_LRU_SIZE              = tostring(var.cache_lru_size)
-      CACHE_LRU_TTL_MINUTES       = tostring(var.cache_lru_ttl_minutes)
+      CACHE_TIDE_LRU_SIZE         = tostring(var.cache_lru_size)
+      CACHE_TIDE_LRU_TTL_MINUTES  = tostring(var.cache_lru_ttl_minutes)
       CACHE_DYNAMO_TTL_DAYS       = tostring(var.cache_dynamo_ttl_days)
       CACHE_STATION_LIST_TTL_DAYS = tostring(var.cache_station_list_ttl_days)
       CACHE_BATCH_SIZE            = tostring(var.cache_batch_size)
@@ -128,6 +151,50 @@ resource "aws_lambda_function" "stations" {
 
   depends_on = [
     aws_cloudwatch_log_group.lambda_stations,
+    null_resource.dummy_zip
+  ]
+
+  lifecycle {
+    ignore_changes = [
+      filename,
+      source_code_hash,
+      publish,
+    ]
+  }
+}
+
+resource "aws_lambda_function" "graphql" {
+  filename         = var.lambda_jar_path != null ? var.lambda_jar_path : local.dummy_zip_path
+  source_code_hash = var.lambda_jar_hash
+  function_name    = "${var.project_name}-graphql-${var.environment}"
+  role             = var.lambda_role_arn
+  handler          = "bootstrap"
+  runtime          = "provided.al2"
+  memory_size      = var.lambda_memory_size
+  timeout          = var.lambda_timeout
+  publish          = var.lambda_publish_version
+  architectures    = ["arm64"] # Add ARM64 architecture for Go
+
+  environment {
+    variables = {
+      STATION_LIST_BUCKET           = var.station_list_bucket_id
+      ALLOWED_ORIGINS               = "https://${var.frontend_domain}"
+      LOG_LEVEL                     = "DEBUG"
+      CACHE_TIDE_LRU_SIZE           = tostring(var.cache_lru_size)
+      CACHE_TIDE_LRU_TTL_MINUTES    = tostring(var.cache_lru_ttl_minutes)
+      CACHE_GRAPHQL_LRU_SIZE        = tostring(var.cache_graphql_lru_size)
+      CACHE_GRAPHQL_LRU_TTL_MINUTES = tostring(var.cache_graphql_lru_ttl_minutes)
+      CACHE_DYNAMO_TTL_DAYS         = tostring(var.cache_dynamo_ttl_days)
+      CACHE_STATION_LIST_TTL_DAYS   = tostring(var.cache_station_list_ttl_days)
+      CACHE_BATCH_SIZE              = tostring(var.cache_batch_size)
+      CACHE_MAX_BATCH_RETRIES       = tostring(var.cache_max_batch_retries)
+      CACHE_ENABLE_LRU              = tostring(var.cache_enable_lru)
+      CACHE_ENABLE_DYNAMO           = tostring(var.cache_enable_dynamo)
+    }
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.lambda_graphql,
     null_resource.dummy_zip
   ]
 
@@ -159,6 +226,15 @@ resource "aws_apigatewayv2_integration" "stations" {
   depends_on = [aws_lambda_function.stations]
 }
 
+resource "aws_apigatewayv2_integration" "graphql" {
+  api_id             = aws_apigatewayv2_api.main.id
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
+  integration_uri    = aws_lambda_function.graphql.invoke_arn
+
+  depends_on = [aws_lambda_function.stations]
+}
+
 # Create routes
 resource "aws_apigatewayv2_route" "tides" {
   api_id    = aws_apigatewayv2_api.main.id
@@ -174,6 +250,14 @@ resource "aws_apigatewayv2_route" "stations" {
   target    = "integrations/${aws_apigatewayv2_integration.stations.id}"
 
   depends_on = [aws_apigatewayv2_integration.stations]
+}
+
+resource "aws_apigatewayv2_route" "graphql" {
+  api_id    = aws_apigatewayv2_api.main.id
+  route_key = "GET /api/stations"
+  target    = "integrations/${aws_apigatewayv2_integration.graphql.id}"
+
+  depends_on = [aws_apigatewayv2_integration.graphql]
 }
 
 # Create API Gateway stage
