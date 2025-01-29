@@ -31,6 +31,27 @@ resource "aws_cloudfront_distribution" "main" {
     }
   }
 
+  ordered_cache_behavior {
+    path_pattern     = "/graphql"
+    allowed_methods  = ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "api"
+
+    forwarded_values {
+      query_string = true
+      headers      = ["Authorization", "Origin", "Content-Type"]
+      cookies {
+        forward = "all"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 0
+    max_ttl                = 0
+    compress               = true
+  }
+
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]
@@ -43,25 +64,6 @@ resource "aws_cloudfront_distribution" "main" {
         forward = "none"
       }
     }
-  }
-
-  ordered_cache_behavior {
-    path_pattern     = "/api/*"
-    allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "api"
-
-    forwarded_values {
-      query_string = true
-      cookies {
-        forward = "all"
-      }
-    }
-
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 0
-    max_ttl                = 0
   }
 
   logging_config {

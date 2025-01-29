@@ -195,6 +195,7 @@ resource "aws_iam_role_policy" "github_actions" {
             "lambda:GetPolicy",
           ]
           Resource = [
+            "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-graphql-${var.environment}",
             "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-tides-${var.environment}",
             "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-stations-${var.environment}"
           ]
@@ -273,6 +274,7 @@ resource "aws_iam_role_policy" "github_actions" {
             "logs:UntagResource"
           ]
           Resource = [
+            "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-graphql-${var.environment}*",
             "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-tides-${var.environment}*",
             "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-stations-${var.environment}*",
             "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/apigateway/${var.project_name}-${var.environment}*",

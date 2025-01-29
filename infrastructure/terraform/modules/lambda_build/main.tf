@@ -21,6 +21,8 @@ resource "null_resource" "build_lambda" {
   provisioner "local-exec" {
     command = <<-EOT
       cd ${path.root}/../../../../backend-go && \
+      GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o bootstrap ./cmd/graphql && \
+      zip graphql.zip bootstrap && \
       GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o bootstrap ./cmd/stations && \
       zip stations.zip bootstrap && \
       GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o bootstrap ./cmd/tides && \
