@@ -1,0 +1,93 @@
+name: Verify
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  TF_VERSION: 1.5.0
+  COVERAGE_THRESHOLD: 80  # Add this to the job or workflow level env
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  lint-terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Format Check
+        working-directory: terraform
+        run: terraform fmt -check -recursive
+
+      - name: tflint
+        uses: terraform-linters/setup-tflint@v3
+        with:
+          tflint_version: v0.44.1
+
+      - name: Run tflint
+        working-directory: terraform
+        run: |
+          tflint --init
+          tflint --recursive
+
+
+  verify-terraform:
+    needs: lint-terraform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        if: github.actor != 'dependabot[bot]'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: terraform/environments/prod
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: terraform/environments/prod
+        run: terraform plan -out=tfplan
+        env:
+          TF_VAR_project_name: ${{ secrets.TF_VAR_PROJECT_NAME }}
+          TF_VAR_domain_name: ${{ secrets.TF_VAR_DOMAIN_NAME }}
+          TF_VAR_frontend_domain: ${{ secrets.TF_VAR_FRONTEND_DOMAIN }}
+          TF_VAR_api_domain: ${{ secrets.TF_VAR_API_DOMAIN }}
+
+  #  TODO work on terraform to make this work
+  #  security-scan:
+  #    runs-on: ubuntu-latest
+  #    steps:
+  #      - uses: actions/checkout@v3
+  #
+  #      - name: Run Trivy vulnerability scanner
+  #        uses: aquasecurity/trivy-action@master
+  #        with:
+  #          scan-type: 'fs'
+  #          ignore-unfixed: true
+  #          format: 'table'
+  #          severity: 'CRITICAL,HIGH'
+  #
+  #      - name: Run tfsec
+  #        uses: aquasecurity/tfsec-action@v1.0.0
+  #        with:
+  #          working_directory: terraform
+

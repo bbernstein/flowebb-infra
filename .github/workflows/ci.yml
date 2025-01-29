@@ -1,0 +1,59 @@
+name: Deploy Infrastructure and Applications
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  TF_VERSION: 1.5.0
+  STATE_BUCKET: "flowebb-terraform-state-bucket"
+  STATE_KEY: "prod/terraform.tfstate"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: terraform/environments/prod
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: terraform/environments/prod
+        run: terraform plan -out=tfplan
+        env:
+          TF_VAR_project_name: ${{ secrets.TF_VAR_PROJECT_NAME }}
+          TF_VAR_domain_name: ${{ secrets.TF_VAR_DOMAIN_NAME }}
+          TF_VAR_frontend_domain: ${{ secrets.TF_VAR_FRONTEND_DOMAIN }}
+          TF_VAR_api_domain: ${{ secrets.TF_VAR_API_DOMAIN }}
+
+      - name: Terraform Apply
+        working-directory: terraform/environments/prod
+        run: terraform apply -auto-approve tfplan
+
+      - name: Cleanup Terraform Lock
+        if: always()  # Run even if previous steps failed
+        run: |
+          aws dynamodb delete-item \
+            --table-name terraform-state-lock \
+            --key "{\"LockID\": {\"S\": \"${{ env.STATE_BUCKET }}/${{ env.STATE_KEY }}\"}}"
+        continue-on-error: true
