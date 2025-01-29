@@ -114,7 +114,7 @@ module "github_actions" {
   project_name               = var.project_name
   environment                = var.environment
   github_org                 = "bbernstein"
-  github_repo                = "flowebb"
+  github_repos               = ["flowebb", "flowebb-web", "flowebb-go", "flowebb-infra"]
   frontend_bucket_arn        = module.storage.frontend_bucket_arn
   cloudfront_distribution_id = module.edge_networking.cloudfront_distribution_id
 
