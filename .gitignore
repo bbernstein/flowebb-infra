@@ -20,3 +20,5 @@ terraform.rc
 *.iml
 *.ipr
 out/
+
+.claudesync/
